@@ -1,14 +1,13 @@
 import { Application, Assets } from "pixi.js";
 import { manifest } from "./space.manifest";
 import { SpaceGame } from "./space-game.class";
-import { Socket } from "./socket.class";
 import { StartGame } from "./startgame.class";
+import { Socket } from "./socket.class";
 
 class Main {
   private appDiv = document.getElementById("app");
   private app = new Application();
   private spaceGame = new SpaceGame();
-  private socket = new Socket();
   private startGame = new StartGame();
 
   constructor() {
@@ -25,14 +24,17 @@ class Main {
         backgroundAlpha: 0,
       });
       (globalThis as any).__PIXI_APP__ = this.app;
+      this.startGame.init();
+      this.spaceGame.init();
       this.app.stage.addChild(
         this.spaceGame.container,
         this.startGame.container
       );
       this.appDiv?.appendChild(this.app.canvas);
       this.onResize();
+      const socket = Socket.getInstance();
+      socket.connectWebSocket();
     });
-    this.socket.connectWebSocket();
   }
 
   onResize() {
