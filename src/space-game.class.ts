@@ -1,10 +1,19 @@
-import { Assets, Container, Sprite, Text} from "pixi.js";
+import { Assets, Container, Sprite, Text } from "pixi.js";
+import { Socket } from "./socket.class";
 
 export class SpaceGame {
   private _container = new Container();
-  private _socket?: WebSocket;
-  private _points: number = 0;
+  private socket = new Socket();
+  private _points: any;
   private _hearts: number = 0;
+
+  constructor() {
+    this.socket.connectWebSocket();
+    this.socket.onDataReceived((data) => {
+      this.drawPoints(data.data.state.points);
+      this.drawHearts(data.data.state.hearts);
+    });
+  }
 
   get container() {
     this.init();
@@ -16,21 +25,6 @@ export class SpaceGame {
     bg.setSize(850, 600);
     this._container.addChild(bg);
     this.drawPlanets();
-    this.connectWebSocket();
-    this.drawPoints();
-    this.drawHearts();
-  }
-
-  connectWebSocket() {
-    this._socket = new WebSocket(
-      "wss://socket.ifrine.com/fast?sid=837decc5eeeb457296aa7293e40b69ae3"
-    );
-
-    this._socket.onmessage = (event) => {
-      console.log("WebSocket message received:", event.data);
-      this._points = JSON.parse(event.data).points;
-      this._hearts = JSON.parse(event.data).hearts;
-    };
   }
 
   drawPlanets() {
@@ -44,29 +38,29 @@ export class SpaceGame {
     }
   }
 
-  drawPoints() {
-    const pointsText = new Text({text: `Points: ${this._points}`});
+  drawPoints(points: number = 0) {
+    const pointsText = new Text({ text: `Points: ${points}` });
     pointsText.style = {
-        fill: 'white',
-        fontWeight: 'bolder'
-    }
+      fill: "white",
+      fontWeight: "bolder",
+    };
     this._container.addChild(pointsText);
   }
 
-  drawHearts() {
-    const heartsText = new Text({text: `Hearts: ${this._hearts}`});
+  drawHearts(hearts: number = 0) {
+    const heartsText = new Text({ text: `Hearts: ${hearts}` });
     heartsText.style = {
-        fill: 'white',
-        fontWeight: 'bolder'
-    }
+      fill: "white",
+      fontWeight: "bolder",
+    };
     heartsText.position.set(0, 30);
     this._container.addChild(heartsText);
   }
 
   destroy() {
     this._container.destroy();
-    if (this._socket) {
-      this._socket.close();
+    if (this.socket) {
+      this.socket.sendAction({ action: "DISCONNECT" });
     }
   }
 }
