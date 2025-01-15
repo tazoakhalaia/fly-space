@@ -1,4 +1,4 @@
-import { Assets, Container, Sprite, Text, Ticker } from "pixi.js";
+import { Assets, Container, Sprite, Text } from "pixi.js";
 import { Socket } from "./socket.class";
 
 export class SpaceGame {
@@ -9,13 +9,25 @@ export class SpaceGame {
   private planetArr: Sprite[] = [];
   private saveCollectPlanetIndex: number[] = [];
   private timer?: ReturnType<typeof setInterval>;
+  private reelLengthText = new Text({
+    text: "",
+    style: { fill: "white", fontWeight: "bolder" },
+  });
 
   constructor() {
     const socket = Socket.getInstance();
     socket.onDataReceived((data) => {
-      this.drawPoints(data.data.points);
-      this.drawHearts(data.data.hearts);
-      this.blinkPlanets(data.data.reels);
+      if (data.data.general) {
+        this.drawPoints(data.data.general.customer.points);
+        this.drawHearts(data.data.general.customer.hearts);
+        this.blinkPlanets(data.data.general.customer.reels);
+      }
+      if (data.data.customer) {
+        this.drawPoints(data.data.customer.points);
+        this.drawHearts(data.data.customer.hearts);
+        this.blinkPlanets(data.data.step.reels);
+        this.reelLenghCount(data.data.step.reels.length);
+      }
     });
   }
 
@@ -29,7 +41,15 @@ export class SpaceGame {
     this._container.addChild(bg);
     this.drawPlanets();
     this.planetAction();
-    this.timerAction(7);
+    this.reelLenghCount();
+    // this.timerAction(7);
+  }
+
+  reelLenghCount(reelLength?: number) {
+    if (reelLength && reelLength > 0)
+      this.reelLengthText.text = `Reel: 0 / ${reelLength}`;
+    this.reelLengthText.position.set(425 - this.reelLengthText.width / 2, 0);
+    this._container.addChild(this.reelLengthText);
   }
 
   drawPlanets() {
@@ -65,17 +85,16 @@ export class SpaceGame {
   }
 
   blinkPlanets(data: number[]) {
+    console.log("data :", data);
     if (data) {
-      console.log("data :", data);
       const blinkDuration = 500;
 
       const blink = (index: number) => {
-        if (index >= data.length) return;
+        if (index > data.length) return;
 
-        const planetIndex = data[index];
-        console.log("planetIndex :", planetIndex);
+        const planetIndex = data[index -1];
+        console.log('planetIndex :', planetIndex);
         const planet = this.planetArr[planetIndex - 1];
-        console.log("planet :", planet);
 
         planet.alpha = 1;
         setTimeout(() => {
@@ -92,13 +111,13 @@ export class SpaceGame {
       planet.eventMode = "dynamic";
       planet.cursor = "pointer";
       planet.addEventListener("pointertap", () => {
-        this.saveCollectPlanetIndex.push(index);
+        this.saveCollectPlanetIndex.push(index + 1);
+        console.log(' this.saveCollectPlanetIndex :',  this.saveCollectPlanetIndex);
       });
     });
   }
 
   timerAction(time: number) {
-    console.log(time);
     this.timer = setInterval(() => {
       time--;
       if (time <= 0) {
@@ -106,7 +125,11 @@ export class SpaceGame {
         Socket.getInstance().sendAction({
           action: "SIMON_STEP",
           type: "action",
-          data: this.saveCollectPlanetIndex,
+          process: "STEP",
+          data: {
+            playerReels: [],
+            multiplier: 1,
+          },
         });
         time = 7;
       }

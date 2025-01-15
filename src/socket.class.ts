@@ -15,26 +15,14 @@ export class Socket {
 
   connectWebSocket() {
     this._socket = new WebSocket(
-      "wss://socket.ifrine.com/fast?sid=837decc5eeeb457296aa7293e40b69ae3"
+      "wss://socket.ifrine.com/fast?sid=d5523cbf0ed5448b99c70122535d4f4c1"
     );
-
-    this._socket.onopen = () => {
-      console.log("WebSocket connection opened");
-    };
 
     this._socket.onmessage = (event) => {
       this._data = JSON.parse(event.data);
-      if (this._onDataReceived) {
+      if (this._onDataReceived && this._data) {
         this._onDataReceived(this._data);
       }
-    };
-
-    this._socket.onclose = () => {
-      console.log("WebSocket connection closed");
-    };
-
-    this._socket.onerror = (error) => {
-      console.error("WebSocket error:", error);
     };
   }
 

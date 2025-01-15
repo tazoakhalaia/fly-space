@@ -56,7 +56,11 @@ export class StartGame {
       socket.sendAction({
         action: "SIMON_STEP",
         type: "action",
-        data: [],
+        process: "STEP",
+        data: {
+          playerReels: [1],
+          multiplier: 1,
+        },
       });
       this.destroy();
     });
