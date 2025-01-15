@@ -58,7 +58,7 @@ export class StartGame {
         type: "action",
         process: "STEP",
         data: {
-          playerReels: [1],
+          playerReels: [2],
           multiplier: 1,
         },
       });

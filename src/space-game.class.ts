@@ -9,6 +9,8 @@ export class SpaceGame {
   private planetArr: Sprite[] = [];
   private saveCollectPlanetIndex: number[] = [];
   private timer?: ReturnType<typeof setInterval>;
+  private reelLengthValue = 0;
+  private savePlanet = 0;
   private reelLengthText = new Text({
     text: "",
     style: { fill: "white", fontWeight: "bolder" },
@@ -26,7 +28,7 @@ export class SpaceGame {
         this.drawPoints(data.data.customer.points);
         this.drawHearts(data.data.customer.hearts);
         this.blinkPlanets(data.data.step.reels);
-        this.reelLenghCount(data.data.step.reels.length);
+        this.reelLenghCount(0, data.data.step.reels.length);
       }
     });
   }
@@ -45,9 +47,14 @@ export class SpaceGame {
     // this.timerAction(7);
   }
 
-  reelLenghCount(reelLength?: number) {
-    if (reelLength && reelLength > 0)
-      this.reelLengthText.text = `Reel: 0 / ${reelLength}`;
+  reelLenghCount(saveCollectPlanetIndex?: number, reelLength?: number) {
+    if (reelLength) {
+      this.reelLengthValue = reelLength;
+    }
+    if (saveCollectPlanetIndex) {
+      this.savePlanet = saveCollectPlanetIndex;
+    }
+    this.reelLengthText.text = `Reel: ${this.savePlanet} / ${this.reelLengthValue}`;
     this.reelLengthText.position.set(425 - this.reelLengthText.width / 2, 0);
     this._container.addChild(this.reelLengthText);
   }
@@ -85,15 +92,13 @@ export class SpaceGame {
   }
 
   blinkPlanets(data: number[]) {
-    console.log("data :", data);
     if (data) {
       const blinkDuration = 500;
 
       const blink = (index: number) => {
         if (index > data.length) return;
 
-        const planetIndex = data[index -1];
-        console.log('planetIndex :', planetIndex);
+        const planetIndex = data[index - 1];
         const planet = this.planetArr[planetIndex - 1];
 
         planet.alpha = 1;
@@ -112,7 +117,7 @@ export class SpaceGame {
       planet.cursor = "pointer";
       planet.addEventListener("pointertap", () => {
         this.saveCollectPlanetIndex.push(index + 1);
-        console.log(' this.saveCollectPlanetIndex :',  this.saveCollectPlanetIndex);
+        this.reelLenghCount(this.saveCollectPlanetIndex.length);
       });
     });
   }
@@ -145,5 +150,7 @@ export class SpaceGame {
 
   destroy() {
     this._container.destroy();
+    this.reelLengthValue = 0;
+    this.savePlanet = 0;
   }
 }
