@@ -28,7 +28,7 @@ export class SpaceGame {
         this.drawPoints(data.data.customer.points);
         this.drawHearts(data.data.customer.hearts);
         this.blinkPlanets(data.data.step.reels);
-        this.reelLenghCount(0, data.data.step.reels.length);
+        this.reelLenghCount([], data.data.step.reels.length);
       }
     });
   }
@@ -47,14 +47,38 @@ export class SpaceGame {
     // this.timerAction(7);
   }
 
-  reelLenghCount(saveCollectPlanetIndex?: number, reelLength?: number) {
+  reelLenghCount(saveCollectPlanetIndex?: number[], reelLength?: number) {
     if (reelLength) {
       this.reelLengthValue = reelLength;
     }
     if (saveCollectPlanetIndex) {
-      this.savePlanet = saveCollectPlanetIndex;
+      this.savePlanet = saveCollectPlanetIndex.length;
     }
     this.reelLengthText.text = `Reel: ${this.savePlanet} / ${this.reelLengthValue}`;
+    if (this.savePlanet === this.reelLengthValue && this.reelLengthValue > 0) {
+      this.savePlanet = 0;
+      Socket.getInstance().sendAction({
+        action: "SIMON_STEP",
+        type: "action",
+        process: "STEP",
+        data: {
+          playerReels: saveCollectPlanetIndex,
+          multiplier: 1,
+        },
+      });
+      this.planetArr.forEach((planet) => {
+        planet.eventMode = "none";
+        planet.cursor = "none";
+      });
+
+      setTimeout(() => {
+        this.planetArr.forEach((planet) => {
+          planet.eventMode = "dynamic";
+          planet.cursor = "pointer";
+          this.destroyValues();
+        });
+      }, 1000);
+    }
     this.reelLengthText.position.set(425 - this.reelLengthText.width / 2, 0);
     this._container.addChild(this.reelLengthText);
   }
@@ -117,7 +141,7 @@ export class SpaceGame {
       planet.cursor = "pointer";
       planet.addEventListener("pointertap", () => {
         this.saveCollectPlanetIndex.push(index + 1);
-        this.reelLenghCount(this.saveCollectPlanetIndex.length);
+        this.reelLenghCount(this.saveCollectPlanetIndex);
       });
     });
   }
@@ -151,6 +175,11 @@ export class SpaceGame {
   destroy() {
     this._container.destroy();
     this.reelLengthValue = 0;
+    this.savePlanet = 0;
+  }
+
+  destroyValues() {
+    this.saveCollectPlanetIndex = [];
     this.savePlanet = 0;
   }
 }
